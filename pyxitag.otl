@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+#+STARTUP: hidestars
+
+* Current
+** TagDataTree [tag_data.py]
+*** tester l'interaction avec gtk
+**** Control, Model, View ??
+**** Automatic construction using glade ?
+http://live.gnome.org/Glade/Tutorials
+** Python project
+*** doc
+*** automation like make
+http://docs.python.org/distutils/index.html
+
+* Wish list
