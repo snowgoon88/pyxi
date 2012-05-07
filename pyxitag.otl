@@ -7,6 +7,8 @@
 **** Control, Model, View ??
 **** Automatic construction using glade ?
 http://live.gnome.org/Glade/Tutorials
+*** créer avec Glade
+**** générer un treemodel qui est le même que dans le programme. et le linker après la création?
 ** Python project
 *** doc
 *** automation like make

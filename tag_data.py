@@ -702,7 +702,7 @@ class TagDataGadget(gtk.Frame):
         """
         print self.tag_store.tag_set
 # **********************************************************************************
-            
+
 # **********************************************************************************
 # ************************************************************************** TagData
 # **********************************************************************************
@@ -730,6 +730,27 @@ class TagData(object):
         self.window.add(self.tag_gadget)
         self.window.show_all()
 # **********************************************************************************
+
+# **********************************************************************************
+# ************************************************************************* TagGLADE
+# **********************************************************************************
+class TagGLADE(object):
+    """
+    """
+
+    # sec --------------------------------------------------------------------- init
+    def __init__(self ):
+        """
+        Read XML UI file and create.
+        """
+        builder = gtk.Builder()
+        builder.add_from_file( "tag_data.glade" )
+
+        self.tag_data_frame = builder.get_object( "tag_data_frame" )
+        self.tag_data_treeview = builder.get_object( "tag_data_treeview" )
+# **********************************************************************************
+            
+
 
 # sec ******************************************************************************
 def main():
@@ -760,10 +781,38 @@ def test_gtk():
         result = dialog.run()
         dialog.destroy()
 
+
+def test_glade():
+    def cb_destroy(widget, data=None):
+        """
+        Destroy main window, ie: self
+        """
+        gtk.main_quit();
+    
+    # get data
+    tag_data = TagDataTree()
+    tag_data.build_example()
+
+    # Need a high level window
+    main_window = gtk.Window()
+    # Connect destroy event
+    main_window.connect( 'destroy', cb_destroy )
+    
+    # Get UI from glade
+    tag_data_glade = TagGLADE()
+    # connect to our treestore
+    tag_data_glade.tag_data_treeview.set_model( tag_data.tag_treestore )
+    main_window.add( tag_data_glade.tag_data_frame )
+    
+    main_window.show_all()
+    gtk.main()
+
+    
 # sec ************************************************************************* MAIN
 if __name__ == "__main__":
     #test_basic()
-    test_load()
+    #test_load()
+    test_glade()
 
     #data = TagDataTree()
     #data.affiche()
@@ -775,9 +824,12 @@ if __name__ == "__main__":
     #data = TagDataTree("page.xhtml")
     #data.affiche()
 
+# sec ************************************************************************** END
 # Local Variables:
 # coding:utf-8
 # End:
+
+
 
 
 
