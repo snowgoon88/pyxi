@@ -22,6 +22,7 @@ class TagDataTree(object):
 
     Through 'self.to_save', the tags are monitored for change since last load or write.
 
+    'self.tag_treestore' is a gtk.Tree representation of the data
     'self.tag_set' is a dictionary {tag : .X.Y.tag}
     'self.tag_element' is an ElementTree version of the tags (XML struct)
     """
@@ -63,13 +64,16 @@ class TagDataTree(object):
         """
         try:
             gens_node = self.add_check_unique(None, "Gens")
-            self.add_check_unique(gens_node, "Bob")
+            self.tag_treestore.set( gens_node, 1, True )
+            bob_node = self.add_check_unique(gens_node, "Bob")
+            #self.tag_treestore.set( bob_node, 1, True )
             self.add_check_unique(gens_node, "Marcel")
             self.add_check_unique(gens_node, "Louise")
             nature_node = self.add_check_unique(None, "Nature")
             self.add_check_unique(nature_node, "Foret")
             self.add_check_unique(nature_node, "Lac")
-            self.add_check_unique(nature_node, "Montagne")
+            montagne_node = self.add_check_unique(nature_node, "Montagne")
+            self.tag_treestore.set( montagne_node, 1, True )
         except TagData_UnicityWarning as e:
             print "@@@",e.__class__.__name__, e
             print self.dump_str()
@@ -321,7 +325,14 @@ class TagDataTree(object):
 # **********************************************************************************
 class TagDataSearch(object):
     """
-    @todo Tester.
+    A search is conducted using a set of selected tag (tag_pattern_list) from
+    a TagDataTree. Then, an image having some 'keywords' can be tested against
+    this pattern :
+    - look_for_one_in : implement a kind of OR (keyword is in one of tag_pattern_list)
+    # look_for_all_in : all keywords must be looked for.
+    - is_matched_by : implement a kind of ALL (all tag_pattern are found in keywords)
+    
+    tag_searched : result of previous search. Usefull for repeated look_for_xxx
     """
     # sec -------------------------------------------------------------------- init
     def __init__(self, tag_pattern_list, tag_data=None):
@@ -335,7 +346,11 @@ class TagDataSearch(object):
         #    self.pattern += t 
         #print self.pattern
 
-    def is_in(self, keyword):
+    # sec ------------------------------------------------------------- ONE keyword
+    def look_for(self, keyword):
+        """
+        Look if 'keyword' is present in the list of tag_pattern of their children.
+        """
         print "looking for ",keyword
         # first, may already be in tag_searched
         try:
@@ -345,20 +360,24 @@ class TagDataSearch(object):
         except KeyError:
             try:
                 strpath = self.tag_data.tag_set[keyword]
-                print "strpath ",strpath
+                #print "strpath ",strpath
                 for pattern in self.tag_pattern_list:
                     if strpath.find( pattern ) != -1:
                         self.tag_searched[keyword] = True
-                        print "OK ", keyword
+                        #print "OK ", keyword
                         return True
             except KeyError:
                 self.tag_searched[keyword] = False
-                print "Not found ", keyword
+                #print "Not found ", keyword
                 #return False
         self.tag_searched[keyword] = False
         print "No ", keyword
         return False
     def is_in_all(self, keyword):
+        """
+        Look if 'keyword' is in EVERY tag_pattern or their children.
+        @todo Not usefull, as unlikely to be used (one keyword in a list of different tag?)
+        """
         print "looking for ",keyword
         # first, may already be in tag_searched
         try:
@@ -384,16 +403,41 @@ class TagDataSearch(object):
         self.tag_searched[keyword] = False
         print "No ", keyword
         return False
-    def one_is_in(self, keyword_list):
+    # sec ----------------------------------------------------------- MANY keywords
+    def look_for_one_in(self, keyword_list):
+        """
+        ONE keyword, at least, must be in one of the tag_pattern or child.
+        """
         for k in keyword_list:
-            if self.is_in( k ):
+            if self.look_for( k ):
                 return True
         return False
-    def one_is_in_all(self, keyword_list):
+    def look_for_all_in(self, keyword_list):
+        """
+        EVERY keywords must be in one of the tag_pattern or child.
+        """
         for k in keyword_list:
-            if self.is_in_all( k ):
-                return True
-        return False
+            if not self.look_for( k ):
+                return False
+        return True
+    def is_matched_by(self, keyword_list):
+        """
+        The set of keywords is enough to be present in every tag_pattern.
+        Longer to compute (inverse from is_in).
+        """
+        for pattern in self.tag_pattern_list:
+            print "Is ",pattern," matched?"
+            found = False
+            for keyword in keyword_list:
+                if self.tag_data.tag_set[keyword].find( pattern ) != -1:
+                    found = True
+                    print "=> YES : ", keyword
+                    break
+            if not found:
+                print "=> NO : exit"
+                return False
+        print "MATCHED"
+        return True
 
 # **********************************************************************************
 # ****************************************************************** TagData_Warning
@@ -409,14 +453,10 @@ class TagData_UnicityWarning(UserWarning):
 # ******************************************************************** TagDataGadget
 # **********************************************************************************
 class TagDataGadget(gtk.Frame):
-    # close the window and quit
-    def delete_event(self, widget, event, data=None):
-        gtk.main_quit()
-        return False
-    
-
-    # ------------------------------------------------------------------------------
-    # --------------------------------------------------------------------- __init__
+    """
+    A GTK Frame to manage TagDataTree.
+    """
+    # sec --------------------------------------------------------------------- init
     def __init__(self, tag_data=None):
         """
         :Param:
@@ -430,6 +470,8 @@ class TagDataGadget(gtk.Frame):
         self.treeview = gtk.TreeView(self.tag_store.tag_treestore)
         # allow the selection of more than one row
         self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        # allow reordring of elements
+        self.treeview.set_reorderable( True )
         # listen for some events
         self.treeview.add_events(gtk.gdk.KEY_PRESS_MASK)
         self.treeview.connect("key-press-event", self.__on_key_press_event)
@@ -475,8 +517,11 @@ class TagDataGadget(gtk.Frame):
         self.scroll_window.show()
         self.add( self.scroll_window )
 
-    # ------------------------------------------------------------------------------
-    # ----------------------------------------------------------__on_key_press_event
+    def delete_event(self, widget, event, data=None):
+        gtk.main_quit()
+        return False
+
+    # sec ----------------------------------------------------------------- callback
     def __on_key_press_event(self, widget, event):
         """
         """
@@ -597,9 +642,8 @@ class TagDataGadget(gtk.Frame):
                 treeview.set_cursor( path, col, 0)
                 self.popup.popup( None, None, None, event.button, time)
                 return 1
-    
-    # ------------------------------------------------------------------------------
-    # ------------------------------------------------------------------- insert_tag
+
+    # sec ------------------------------------------------------------------ actions    
     def insert_tag(self):
         """
         DRAFT: test how to retrieve selection list from treeview
@@ -642,8 +686,6 @@ class TagDataGadget(gtk.Frame):
             # print "More than one selection"
             pass
 
-    # ------------------------------------------------------------------------------
-    # --------------------------------------------------------------------- edit_tag
     def edit_tag(self):
         """
         DRAFT: edit a tag if only one row is selected
@@ -661,8 +703,6 @@ class TagDataGadget(gtk.Frame):
             # print "Not one selection"
             pass
 
-    # ------------------------------------------------------------------------------
-    # ------------------------------------------------------------------- delete_tag
     def delete_tag(self):
         """
         DRAFT: ask before deleting all tags selected.
@@ -684,8 +724,7 @@ class TagDataGadget(gtk.Frame):
                 for iter in iter_list:
                     self.tag_store.remove( iter )
             dialog.destroy()
-    # ------------------------------------------------------------------------------
-    # ---------------------------------------------------------------- print_strpath
+
     def print_strpath(self):
         """
         DRAFT : print full strPath of selected nodes
@@ -694,8 +733,7 @@ class TagDataGadget(gtk.Frame):
         if( len(pathlist) >= 1 ):
             for path in pathlist:
                 print self.tag_store.strpath_from_path( path )
-    # ------------------------------------------------------------------------------
-    # ------------------------------------------------------------------- to_element
+
     def print_tag_set(self):
         """
         DEBUG: print the set of 'unique' tags
@@ -706,29 +744,34 @@ class TagDataGadget(gtk.Frame):
 # **********************************************************************************
 # ************************************************************************** TagData
 # **********************************************************************************
-class TagData(object):
-    # close the window and quit
-    def delete_event(self, widget, event, data=None):
-        gtk.main_quit()
-        return False
-    
-
+class TagDataApplication(object):
+    """
+    Basic application for testing TagDataTree.
+    """
+    # sec --------------------------------------------------------------------- init
     def __init__(self):
         # Create a new window
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
         self.window.set_title("Basic TreeView Example")
 
-        self.window.set_size_request(200, 200)
+        self.window.set_size_request(200, 600)
         self.window.connect("delete_event", self.delete_event)
-        # create a TreeStore with string and boolean
-        #self.tag_store = gtk.TreeStore(str, 'gboolean')
-        tag_store = TagDataTree("page.xhtml")
+
+        # Create data by loading file
+        tag_store = TagDataTree("data/tag_data.xml")
 
         self.tag_gadget = TagDataGadget( tag_store )
         self.tag_gadget.show()
         self.window.add(self.tag_gadget)
         self.window.show_all()
+
+    def delete_event(self, widget, event, data=None):
+        """
+        Close the window and quit.
+        """
+        gtk.main_quit()
+        return False
 # **********************************************************************************
 
 # **********************************************************************************
@@ -760,23 +803,38 @@ def test_basic():
     print "*** test_basic()"
     data = TagDataTree()
     data.build_example()
-    data.write( "tmp/tag_data.xml" )
+    data.write( "data/tag_data.xml" )
     print data.dump_str()
 def test_load():
     print "*** test_load()"
-    data = TagDataTree( "tmp/tag_data.xml" )
+    data = TagDataTree( "data/tag_data.xml" )
     print data.dump_str()
+def test_search():
+    print "*** test_search()"
+    data = TagDataTree()
+    data.build_example()
+    print data.dump_str();
+
+    print "Selected ", data.get_selected_tag()
+    search = TagDataSearch( data.get_selected_tag(), data )
+
+    l_test = [['Bob'], ['Marcel'], ['Bob','Marcel'], ['Bob','Nature'], ['Bob','Montagne'], ['Bob','Montagne','Lac'], ['Marcel','Foret','Lac']]
+    for k in l_test:
+        #print "Look for all in ", k, " ", search.look_for_all_in( k )
+        print "Is matched by ", k, " ", search.is_matched_by( k )
+    print "searched : ",search.tag_searched
+   
 
 def test_gtk():
-    tvexample = TagData()
+    appligtk = TagDataApplication()
     try:
         main()
     except TagData_UnicityWarning:
         #ask confirmation by dialog
-        dialog = gtk.Dialog('Doublon in Tags', tvexample.window.get_toplevel(),
+        dialog = gtk.Dialog('Doublon in Tags', appligth.window.get_toplevel(),
                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                             ("Ok", gtk.RESPONSE_OK))
-        #dialog.vbox.pack_start(gtk.Label('On supprime VRAIMENT tout Ã§a ?'))
+        #dialog.vbox.pack_start(gtk.Label('On supprime VRAIMENT tout ça ?'))
         dialog.show_all()
         result = dialog.run()
         dialog.destroy()
@@ -812,24 +870,13 @@ def test_glade():
 if __name__ == "__main__":
     #test_basic()
     #test_load()
+    #test_search()
+    # test_gtk()
     test_glade()
 
-    #data = TagDataTree()
-    #data.affiche()
-    #data.to_element()
-    #print data.tag_element.__repr__()
-    # wrap it in an ElementTree instance, and save as XML
-    #tree = ET.ElementTree(data.tag_element)
-    #tree.write("page.xhtml")
-    #data = TagDataTree("page.xhtml")
-    #data.affiche()
 
 # sec ************************************************************************** END
+
 # Local Variables:
 # coding:utf-8
 # End:
-
-
-
-
-
