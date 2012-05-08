@@ -154,6 +154,35 @@ class TagDataTree(object):
         self.tag_set[tag] = self.strpath_from_path(path_added)
         self.to_save = True
         return iter_added
+    def add_sibling_check_unique(self, iter, tag):
+        """
+        Add 'tag' to 'tag_set' and 'treestore', as a sibling of 'iter'
+        if not exist already.
+
+        :Params:
+        - iter : where is the sibling in the TagTree
+        - tag : tag to be added
+
+        :Returns:
+        - iter to the added tag
+
+        :Throws:
+        - TagData_UnicityWarning( 'tag: '+tag+' already in TagDataTree')
+        """
+        # if exists -> raise Exception
+        if( tag in self.tag_set.keys()):
+            raise TagData_UnicityWarning( 'tag: '+tag+' already in TagDataTree')
+        
+        # iter of parent
+        iter_parent = self.tag_treestore.iter_parent( iter )
+        # add as a sibling
+        iter_added = self.tag_treestore.insert_after( iter_parent, iter, 
+                                                      (tag, False, True))
+        path_added = self.tag_treestore.get_path(iter_added) 
+        # add it to the tagtree
+        self.tag_set[tag] = self.strpath_from_path(path_added)
+        self.to_save = True
+        return iter_added        
 
     def update_check_unique(self, iter, new_tag):
         """
@@ -536,55 +565,73 @@ class TagDataGadget(gtk.Frame):
     # sec ----------------------------------------------------------------- callback
     def __on_key_press_event(self, widget, event):
         """
+        :Warning: With MacOS, may change 
+        and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)
+        to
+        and (event.state == gtk.gdk.CONTROL_MASK)
         """
         # keyval is in gtk.keysyms.Insert (par exemple)
-        #print "TagDataGadget __on_key_press_event"
-        #print "event.keyval =",event.keyval
-        #print "event.string =",event.string
-        #print "event.state =", event.state, event.state.__class__
-        #print "event.group =",event.group
-        #print event
+        # print "TagDataGadget __on_key_press_event"
+        # print "event.keyval =",event.keyval
+        # print "event.string =",event.string
+        # print "event.state =", event.state, event.state.__class__
+        # print "Ctrl ? =", (event.state & gtk.gdk.CONTROL_MASK)
+        # print "event.group =",event.group
+        # print event
         # Insert or Ctrl-i -> insert new tag
         if( event.keyval == gtk.keysyms.Insert or 
             ((event.keyval == gtk.keysyms.i or event.keyval == gtk.keysyms.I)
-             and (event.state == gtk.gdk.CONTROL_MASK))):
-             #and (event.state & gtk.gdk.CONTROL_MASK == True))):             
+             #and (event.state == gtk.gdk.CONTROL_MASK))):
+            and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK))):
             self.insert_tag()
+            return True  # NO event propagation
+        # Ctr-j -> add as simbling
+        elif( (event.keyval == gtk.keysyms.j or event.keyval == gtk.keysyms.J)
+              #and (event.state == gtk.gdk.CONTROL_MASK)):
+              and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
+            self.add_sibling_tag()
             return True  # NO event propagation
         # Delete or Ctrl-x -> delete_tag
         elif( event.keyval == gtk.keysyms.Delete or
             ((event.keyval == gtk.keysyms.x or event.keyval == gtk.keysyms.X)
-             and (event.state == gtk.gdk.CONTROL_MASK))):
+             #and (event.state == gtk.gdk.CONTROL_MASK))):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK))):
             self.delete_tag()
             return True  # NO event propagation
         # Ctrl-e -> edit tag
         elif( (event.keyval == gtk.keysyms.e or event.keyval == gtk.keysyms.E)
-             and (event.state == gtk.gdk.CONTROL_MASK)):
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
             self.edit_tag()
             return True  # NO event propagation
         # Ctrl-p -> print_tree
         elif( (event.keyval == gtk.keysyms.p or  event.keyval == gtk.keysyms.P)
-             and (event.state == gtk.gdk.CONTROL_MASK)):
-            self.tag_store.affiche()
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
+            print self.tag_store.display_str()
             return True  # NO event propagation
         # Ctrl-l -> print selection
         elif( (event.keyval == gtk.keysyms.l or event.keyval == gtk.keysyms.L)
-             and (event.state == gtk.gdk.CONTROL_MASK)):
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
             print self.tag_store.get_selected_tag()
             return True  # NO event propagation
         # Ctrl-z -> clear selection
         elif( (event.keyval == gtk.keysyms.z or event.keyval == gtk.keysyms.Z)
-             and (event.state == gtk.gdk.CONTROL_MASK)):
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
             print self.tag_store.clean_selected()
             return True  # NO event propagation
         # Ctrl-f -> print str_path
         elif( (event.keyval == gtk.keysyms.f or event.keyval == gtk.keysyms.F)
-             and (event.state == gtk.gdk.CONTROL_MASK)):
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
             print self.print_strpath()
             return True  # NO event propagation
         # Ctrl-b -> print tag_set
         elif( (event.keyval == gtk.keysyms.b or event.keyval == gtk.keysyms.B)
-             and (event.state == gtk.gdk.CONTROL_MASK)):
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
             print self.print_tag_set()
             return True  # NO event propagation
         
@@ -718,7 +765,48 @@ class TagDataGadget(gtk.Frame):
         else:
             # print "More than one selection"
             pass
+    def add_sibling_tag(self):
+        """
+        DRAFT: test how to retrieve selection list from treeview
+        and insert new elements to tree that can be edited.
 
+        If no row selected, a tag '_New_' is added to the root of the tree.
+        If one row is selected, a tag '_New_' is added as a sibling 
+        and can be edited.
+        If more than one row is selected, nothing happens.
+        """
+        # print "** insert_tag**"
+        (model, pathlist) = self.treeview.get_selection().get_selected_rows()
+        if( len(pathlist) == 0):
+            # print "Adding to Root"
+            try:
+                path_added = self.tag_store.add_check_unique( None, "_New_" )
+                self.treeview.set_cursor(path_added, self.tvcolumn0, start_editing=True)
+            except TagData_UnicityWarning as warn:
+                dialog = gtk.Dialog('Doublon in Tags', self.get_toplevel(),
+                                    gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                    ("Ok", gtk.RESPONSE_OK))
+                dialog.vbox.pack_start(gtk.Label(warn.__str__()))
+                dialog.show_all()
+                result = dialog.run()
+                dialog.destroy()
+        elif( len(pathlist) == 1):
+            # print "Insert possible"
+            try:
+                iter_added = self.tag_store.add_sibling_check_unique( self.tag_store.tag_treestore.get_iter(pathlist[0]), "_New_" )
+                self.treeview.expand_row(pathlist[0], False)
+                self.treeview.set_cursor(self.tag_store.tag_treestore.get_path(iter_added), self.tvcolumn0, start_editing=True)
+            except TagData_UnicityWarning as warn:
+                dialog = gtk.Dialog('Doublon in Tags', self.get_toplevel(),
+                                    gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                    ("Ok", gtk.RESPONSE_OK))
+                dialog.vbox.pack_start(gtk.Label(warn.__str__()))
+                dialog.show_all()
+                result = dialog.run()
+                dialog.destroy()
+        else:
+            # print "More than one selection"
+            pass
     def edit_tag(self):
         """
         DRAFT: edit a tag if only one row is selected

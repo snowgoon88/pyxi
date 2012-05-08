@@ -2,13 +2,13 @@
 #+STARTUP: hidestars
 
 * Current tag_data.py L428
-** TagDataTree [tag_data.py]
+** TODO TagDataTree [tag_data.py]
 *** DONE search à tester
-*** tester l'interaction avec gtk
-**** Commandes
+*** TODO tester l'interaction avec gtk
+**** TODO Commandes
 ***** TODO how to clear *internal* selection (of GTK TreeStore)
 ***** Insert or Ctrl-i -> insert new tag, below
-***** TODO -> insert new tag, brother?
+***** Ctrl-j -> insert new tag, brother?
 ***** Delete or Ctrl-x -> delete_tag
 ***** Ctrl-e -> edit tag
 ***** Ctrl-l -> print selection
