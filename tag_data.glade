@@ -4,7 +4,7 @@
   <!-- interface-naming-policy project-wide -->
   <object class="GtkTreeStore" id="glade_treestore">
     <columns>
-      <!-- column-name Mot Clef -->
+      <!-- column-name Mot -->
       <column type="gchararray"/>
       <!-- column-name Selection -->
       <column type="gboolean"/>
@@ -21,8 +21,6 @@
       <object class="GtkScrolledWindow" id="scrolledwindow1">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
-        <property name="hscrollbar_policy">automatic</property>
-        <property name="vscrollbar_policy">automatic</property>
         <child>
           <object class="GtkTreeView" id="tag_data_treeview">
             <property name="visible">True</property>
@@ -30,7 +28,10 @@
             <property name="model">glade_treestore</property>
             <child>
               <object class="GtkTreeViewColumn" id="treeviewcolumn1">
+                <property name="sizing">fixed</property>
+                <property name="min_width">100</property>
                 <property name="title" translatable="yes">Mot Clef</property>
+                <property name="expand">True</property>
                 <property name="clickable">True</property>
                 <property name="alignment">0.039999999105930328</property>
                 <child>
@@ -43,7 +44,12 @@
             </child>
             <child>
               <object class="GtkTreeViewColumn" id="treeviewcolumn2">
+                <property name="sizing">fixed</property>
+                <property name="fixed_width">50</property>
+                <property name="min_width">50</property>
+                <property name="max_width">50</property>
                 <property name="title" translatable="yes">Selection</property>
+                <property name="clickable">True</property>
                 <child>
                   <object class="GtkCellRendererToggle" id="cellrenderertoggle1"/>
                   <attributes>

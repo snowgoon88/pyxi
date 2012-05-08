@@ -16,17 +16,20 @@
 ***** Ctrl-f -> print str_path
 ***** Ctrl-b -> print tag_set
 **** faire de l'aide pour se rappeler des commandes?
+ Dans Popup ?
+**** taille des colonnes, scrolled window.
 **** DONE déplacer arbre et sous arbre => within GTK
 **** Faire des actions qui pourront être reprises dans des menu ou bouton ou toolitems
-**** TODO cliquer sur les header : motclef = expand/reduce all; selection = selectall/unselect
+**** DONE cliquer sur les header : motclef = expand/reduce all; selection = selectall/unselect
 faut internet
 **** DONE very basic application within tag_data.py
 Could add some menu and actions.
 **** Control, Model, View ??
-**** TODO Automatic construction using glade ?
-http://live.gnome.org/Glade/Tutorials
 *** créer avec Glade
-**** générer un treemodel qui est le même que dans le programme. et le linker après la création?
+**** Automatic construction using glade ?
+http://live.gnome.org/Glade/Tutorials
+
+**** générer un treemodel qui est le même que dans le programme. et le linker après la création? => pas aussi précis que avec GTK
 ** Python project
 *** doc
 *** automation like make

@@ -244,15 +244,20 @@ class TagDataTree(object):
         """
         Unselect all tags in treestore.
         """
-        self.rec_clean_selected(self.tag_treestore.iter_children(None))
-    def rec_clean_selected(self,iter):
+        self.rec_set_selected(self.tag_treestore.iter_children(None), False)
+    def select_all(self):
         """
-        For a given 'iter' of treestore nodes, unselect them and call
+        Select all tags in treestore.
+        """
+        self.rec_set_selected(self.tag_treestore.iter_children(None), True)
+    def rec_set_selected(self, iter, status):
+        """
+        For a given 'iter' of treestore nodes, set selected and call
         same function on subnodes
         """
         while iter:
-            self.tag_treestore.set_value(iter, 1, False)
-            self.rec_clean_selected( self.tag_treestore.iter_children(iter))
+            self.tag_treestore.set_value(iter, 1, status)
+            self.rec_set_selected( self.tag_treestore.iter_children(iter), status)
             iter = self.tag_treestore.iter_next(iter)
 
     # sec -------------------------------------------------------- strpath_from_path
@@ -472,17 +477,21 @@ class TagDataGadget(gtk.Frame):
         self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         # allow reordring of elements
         self.treeview.set_reorderable( True )
-        # listen for some events
+        # can click on header
+        # listen for some keyboard events
         self.treeview.add_events(gtk.gdk.KEY_PRESS_MASK)
         self.treeview.connect("key-press-event", self.__on_key_press_event)
 
         # create the TreeViewColumn to display the tags
         self.tvcolumn0 = gtk.TreeViewColumn('Mot clef')
+        self.tvcolumn0.set_fixed_width( 40 )
+        self.tvcolumn0.set_expand( True )
+        self.tvcolumn0.set_clickable( True )
+        self.tvcolumn0.connect( 'clicked', self.__on_title0_clicked )
         # create a CellRendererText to render the tags
         self.text_cell = gtk.CellRendererText()
         #self.text_cell.set_property('editable', True)
         self.text_cell.connect('edited', self.__on_cell_edited, self.tag_store.tag_treestore)
-
         # add the cell to the tvcolumn and allow it to expand
         self.tvcolumn0.pack_start(self.text_cell, True)
         # set the cell "text" attribute to column 0 - retrieve text
@@ -490,6 +499,7 @@ class TagDataGadget(gtk.Frame):
         # and its editable capacity from column 2
         self.tvcolumn0.add_attribute(self.text_cell, 'text', 0)
         self.tvcolumn0.add_attribute(self.text_cell, 'editable', 2)
+
         # The toggle cellrenderer is setup and we allow it to be
         # changed (toggled) by the user.
         self.toggle_cell = gtk.CellRendererToggle()
@@ -501,6 +511,8 @@ class TagDataGadget(gtk.Frame):
         # will show as active e.g on.
         self.tvcolumn1 = gtk.TreeViewColumn("Selection", self.toggle_cell )
         self.tvcolumn1.add_attribute( self.toggle_cell, "active", 1)
+        self.tvcolumn1.set_clickable( True )
+        self.tvcolumn1.connect( 'clicked', self.__on_title1_clicked )
 
         # add columns
         self.treeview.append_column( self.tvcolumn0 )
@@ -578,6 +590,27 @@ class TagDataGadget(gtk.Frame):
         
         return False #event propagation
     # ------------------------------------------------------------------------------
+    # ---------------------------------------------------------- __on_title0_clicked
+    def __on_title0_clicked(self, widget, *args ):
+        """
+        Toggle between expand all and none, according to status of first element.
+        """
+        if self.treeview.row_expanded( (0,) ):
+            self.treeview.collapse_all()
+        else:
+            self.treeview.expand_all()
+    # ------------------------------------------------------------------------------
+    # ---------------------------------------------------------- __on_title1_clicked
+    def __on_title1_clicked(self, widget, *args ):
+        """
+        Toggle between all toggled or None, according to first element.
+        """
+        status = self.tag_store.tag_treestore.get_value( self.tag_store.tag_treestore.iter_children(None), 1)
+        if status :
+            self.tag_store.clean_selected()
+        else:
+            self.tag_store.select_all()
+    # ------------------------------------------------------------------------------
     # ------------------------------------------------------------- __on_cell_edited
     def __on_cell_edited(self, cell, path, new_text, user_data):
         """
@@ -643,7 +676,7 @@ class TagDataGadget(gtk.Frame):
                 self.popup.popup( None, None, None, event.button, time)
                 return 1
 
-    # sec ------------------------------------------------------------------ actions    
+    # sec ------------------------------------------------------------------ actions
     def insert_tag(self):
         """
         DRAFT: test how to retrieve selection list from treeview
@@ -871,8 +904,8 @@ if __name__ == "__main__":
     #test_basic()
     #test_load()
     #test_search()
-    # test_gtk()
-    test_glade()
+    test_gtk()
+    # test_glade()
 
 
 # sec ************************************************************************** END
