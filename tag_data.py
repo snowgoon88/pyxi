@@ -497,6 +497,7 @@ class TagDataGadget(gtk.Frame):
         - tag_data: a TagDataTree
         """
         gtk.Frame.__init__(self)
+        
         # store tag_data
         self.tag_store = tag_data
         
@@ -634,6 +635,12 @@ class TagDataGadget(gtk.Frame):
              and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
             print self.print_tag_set()
             return True  # NO event propagation
+        # Ctrl-h -> HelpDialog
+        elif( (event.keyval == gtk.keysyms.h or event.keyval == gtk.keysyms.H)
+             #and (event.state == gtk.gdk.CONTROL_MASK)):
+             and (event.state & gtk.gdk.CONTROL_MASK == gtk.gdk.CONTROL_MASK)):
+            self.help_message()
+            return True  # NO event propagation
         
         return False #event propagation
     # ------------------------------------------------------------------------------
@@ -738,7 +745,8 @@ class TagDataGadget(gtk.Frame):
         if( len(pathlist) == 0):
             # print "Adding to Root"
             try:
-                path_added = self.tag_store.add_check_unique( None, "_New_" )
+                iter_added = self.tag_store.add_check_unique( None, "_New_" )
+                path_added = self.tag_store.tag_treestore.get_path( iter_added )
                 self.treeview.set_cursor(path_added, self.tvcolumn0, start_editing=True)
             except TagData_UnicityWarning as warn:
                 dialog = gtk.Dialog('Doublon in Tags', self.get_toplevel(),
@@ -780,7 +788,8 @@ class TagDataGadget(gtk.Frame):
         if( len(pathlist) == 0):
             # print "Adding to Root"
             try:
-                path_added = self.tag_store.add_check_unique( None, "_New_" )
+                iter_added = self.tag_store.add_check_unique( None, "_New_" )
+                path_added = self.tag_store.tag_treestore.get_path( iter_added )
                 self.treeview.set_cursor(path_added, self.tvcolumn0, start_editing=True)
             except TagData_UnicityWarning as warn:
                 dialog = gtk.Dialog('Doublon in Tags', self.get_toplevel(),
@@ -860,6 +869,24 @@ class TagDataGadget(gtk.Frame):
         DEBUG: print the set of 'unique' tags
         """
         print self.tag_store.tag_set
+    def help_message(self):
+        # Create dialog if needed
+        help_dialog = gtk.MessageDialog( parent= self.get_toplevel(),
+                                         flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+            message_format="Insert or Ctrl-i -> insert new tag as child\n" \
+                "Ctrl-j -> insert new tag, brother\n" \
+                "Delete or Ctrl-x -> delete_tag\n" \
+                "Ctrl-e -> edit tag\n" \
+                "Ctrl-l -> print selection\n" \
+                "Ctrl-z -> clear selection\n" \
+                "Ctrl-f -> print str_path\n" \
+                "Ctrl-b -> print tag_set\n" \
+                "Ctlr-h -> this help"
+            )
+        help_dialog.set_title( "Shortcut for TagTree" )
+        help_dialog.show_all()
+
+
 # **********************************************************************************
 
 # **********************************************************************************

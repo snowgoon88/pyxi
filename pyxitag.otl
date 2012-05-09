@@ -15,11 +15,11 @@
 ***** Ctrl-z -> clear selection
 ***** Ctrl-f -> print str_path
 ***** Ctrl-b -> print tag_set
-**** faire de l'aide pour se rappeler des commandes?
+**** DONE faire de l'aide pour se rappeler des commandes?
  Dans Popup ?
 **** taille des colonnes, scrolled window.
 **** DONE déplacer arbre et sous arbre => within GTK
-**** Faire des actions qui pourront être reprises dans des menu ou bouton ou toolitems
+**** TODO Faire des actions qui pourront être reprises dans des menu ou bouton ou toolitems
 **** DONE cliquer sur les header : motclef = expand/reduce all; selection = selectall/unselect
 faut internet
 **** DONE very basic application within tag_data.py
