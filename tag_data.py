@@ -7,6 +7,7 @@ __docformat__ = "restructuredtext en"
 
 import gtk
 import xml.etree.ElementTree as ET
+import os
 
 # **********************************************************************************
 # ********************************************************************** TagDataTree
@@ -41,8 +42,9 @@ class TagDataTree(object):
         # To monitor changes
         self.to_save = False
 
-        if filename != None:
-            self.load( filename )
+        self.filename = filename
+        if self.filename != None:
+            self.load( self.filename )
         
     def build_default(self):
         """
@@ -87,12 +89,14 @@ class TagDataTree(object):
         tree = ET.ElementTree( self.tag_element )
         tree.write(db_file_name)
 
+        self.filename = db_file_name
         self.to_save = False
     
     def load(self, db_file_name):
         """
         Lit dans un fichier au format XML.
         """
+        self.filename = db_file_name
         tree = ET.parse( db_file_name)
         self.element_to_tagnode( tree.getroot(), None)
     
@@ -237,7 +241,7 @@ class TagDataTree(object):
         Return the list of selected tags
         """
         return self.rec_selected_tag(self.tag_treestore.iter_children(None), [])
-    def rec_selected_tag(self,iter,selected):
+    def rec_selected_tag(self,iter,selecgted):
         """
         For a given 'iter' of treestore nodes, populate list of 'selected' and
         call same function on subnodes.
@@ -497,7 +501,9 @@ class TagDataGadget(gtk.Frame):
         - tag_data: a TagDataTree
         """
         gtk.Frame.__init__(self)
-        
+        self.list_actions = []
+        self.init_actions()
+
         # store tag_data
         self.tag_store = tag_data
         
@@ -558,7 +564,37 @@ class TagDataGadget(gtk.Frame):
         self.scroll_window.add_with_viewport( self.treeview )
         self.scroll_window.show()
         self.add( self.scroll_window )
-
+    def init_actions(self):
+        # load
+        action_load = gtk.Action('tag_data_load', label='Load Tag',
+                                 tooltip='Load hierarchy of Tags',
+                                      stock_id=gtk.STOCK_OPEN)
+        action_load.connect( 'activate', self.__cb_action_load )
+        self.list_actions.append( action_load )
+        # save
+        action_save = gtk.Action('tag_data_save', label='Save Tag',
+                                 tooltip='Save hierarchy of Tags',
+                                      stock_id=gtk.STOCK_SAVE)
+        action_save.connect( 'activate', self.__cb_action_save )
+        self.list_actions.append( action_save )
+        # save_as
+        action_save_as = gtk.Action('tag_data_save_as', label='Save Tag As',
+                                    tooltip='Save hierarchy of Tags',
+                                    stock_id=gtk.STOCK_SAVE)
+        action_save_as.connect( 'activate', self.__cb_action_save_as )
+        self.list_actions.append( action_save_as )
+        # add (as a sibling)
+        action_add = gtk.Action( 'add_tag', label='Add Tag',
+                                 tooltip='Add a sibling Tag',
+                                 stock_id=gtk.STOCK_ADD)
+        action_add.connect( 'activate', self.__cb_action_add )
+        self.list_actions.append( action_add )
+        # delete tag
+        action_delete = gtk.Action( 'delete_tag', label='Delete Tag',
+                                    tooltip='Delete Tag',
+                                    stock_id=gtk.STOCK_DELETE)
+        action_delete.connect( 'activate', self.__cb_action_delete )
+        self.list_actions.append( action_delete )
     def delete_event(self, widget, event, data=None):
         gtk.main_quit()
         return False
@@ -730,6 +766,64 @@ class TagDataGadget(gtk.Frame):
                 self.popup.popup( None, None, None, event.button, time)
                 return 1
 
+    def __cb_action_load(self, *args ):
+        """
+        Open a FileDialogManager to choose a file to load tag_data from.
+        """
+        load_dialog = gtk.FileChooserDialog( title='Open TagData',
+                                             parent=self.get_toplevel(),
+                                             action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                                             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        answer = load_dialog.run()
+        print "FileDialogLoad answer = ",answer
+        if answer == gtk.RESPONSE_ACCEPT :
+            self.tag_store.load( load_dialog.get_filename() )
+        load_dialog.destroy()
+    def __cb_action_save(self, *args ):
+        """
+        If self.tag_store has already a filename, try to save using it.
+        If not, ask for a filename.
+        """
+        if( self.tag_store.filename is None ):
+            save_dialog = gtk.FileChooserDialog( title='Save TagData',
+                                                 parent=self.get_toplevel(),
+                                                 action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                                                 buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+            # confirm if already exists
+            save_dialog.set_do_overwrite_confirmation( True )
+            answer = save_dialog.run()
+            print "FileDialogSave answer =",answer
+            if answer == gtk.RESPONSE_ACCEPT :
+                self.tag_store.write( save_dialog.get_filename() )
+            save_dialog.destroy()
+        else:
+            print "Saving as ", self.tag_store.filename
+            self.tag_store.write( self.tag_store.filename )
+    def __cb_action_save_as(self, *args ):
+        """
+        Ask for a filename and save, with confirmation if already exists.
+        """
+        save_dialog = gtk.FileChooserDialog( title='Save TagData',
+                                             parent=self.get_toplevel(),
+                                             action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                                             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+            # confirm if already exists
+        save_dialog.set_do_overwrite_confirmation( True )
+        answer = save_dialog.run()
+        print "FileDialogSave answer =",answer
+        if answer == gtk.RESPONSE_ACCEPT :
+            self.tag_store.write( save_dialog.get_filename() )
+        save_dialog.destroy()
+    def __cb_action_add(self, *args ):
+        """
+        Add a nexw tag as sibling.
+        """
+        self.add_sibling_tag()
+    def __cb_action_delete(self, *args ):
+        """
+        Delete the current tag.
+        """
+        self.delete_tag()
     # sec ------------------------------------------------------------------ actions
     def insert_tag(self):
         """

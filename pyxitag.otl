@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 #+STARTUP: hidestars
 
-* Current tag_data.py L428
+* Current tag_data.py 
+** Voir PygtkHelpers ??
+** test_component.py
+*** menu pour component
+*** menu pour test avec +/- names on buttons (for example)
 ** TODO TagDataTree [tag_data.py]
 *** DONE search à tester
 *** TODO tester l'interaction avec gtk
@@ -19,7 +23,7 @@
  Dans Popup ?
 **** taille des colonnes, scrolled window.
 **** DONE déplacer arbre et sous arbre => within GTK
-**** TODO Faire des actions qui pourront être reprises dans des menu ou bouton ou toolitems
+**** DONE Faire des actions qui pourront être reprises dans des menu ou bouton ou toolitems
 **** DONE cliquer sur les header : motclef = expand/reduce all; selection = selectall/unselect
 faut internet
 **** DONE very basic application within tag_data.py
