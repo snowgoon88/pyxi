@@ -595,6 +595,12 @@ class TagDataGadget(gtk.Frame):
                                     stock_id=gtk.STOCK_DELETE)
         action_delete.connect( 'activate', self.__cb_action_delete )
         self.list_actions.append( action_delete )
+        # help
+        action_help =  gtk.Action( 'help_tag', label='Help Tags',
+                                    tooltip='Key bindings about Tags',
+                                    stock_id=gtk.STOCK_HELP)
+        action_help.connect( 'activate', self.__cb_action_help )
+        self.list_actions.append( action_help )
     def delete_event(self, widget, event, data=None):
         gtk.main_quit()
         return False
@@ -824,6 +830,11 @@ class TagDataGadget(gtk.Frame):
         Delete the current tag.
         """
         self.delete_tag()
+    def __cb_action_help(self, *args ):
+        """
+        Dialog with Key Bindings;
+        """
+        self.help_message()
     # sec ------------------------------------------------------------------ actions
     def insert_tag(self):
         """

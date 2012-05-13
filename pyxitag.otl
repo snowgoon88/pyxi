@@ -3,12 +3,9 @@
 
 * Current tag_data.py 
 ** Voir PygtkHelpers ??
-** test_component.py
-*** menu pour component
-*** menu pour test avec +/- names on buttons (for example)
 ** TODO TagDataTree [tag_data.py]
 *** DONE search à tester
-*** TODO tester l'interaction avec gtk
+*** DONE tester l'interaction avec gtk
 **** TODO Commandes
 ***** TODO how to clear *internal* selection (of GTK TreeStore)
 ***** Insert or Ctrl-i -> insert new tag, below
@@ -34,6 +31,7 @@ Could add some menu and actions.
 http://live.gnome.org/Glade/Tutorials
 
 **** générer un treemodel qui est le même que dans le programme. et le linker après la création? => pas aussi précis que avec GTK
+**** => abandon, car pas facile de gérer TreeStore et puis compliqué pour les raccourcis clavier.
 ** Python project
 *** doc
 *** automation like make
